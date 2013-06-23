@@ -5,14 +5,16 @@ LoadWorld = {}
 --------------------------------------------------------------------------------------
 -- External Libraries
 --------------------------------------------------------------------------------------
-local fileio     = require ("library.core.fileio")
-local json       = require ("json")
-local modelLib   = {}
+local fileio     	= require ("library.core.fileio")
+local json       	= require ("json")
+local modelLib   	= {}
+local tmpImgBuffer  = {}
 
 function LoadWorld:new(params)
 
 	local screen   = display.newGroup()
 	local textures = {}
+
 	
 
 	------------------------------------------------------------------------------------------
@@ -33,46 +35,6 @@ function LoadWorld:new(params)
 	
 	end
 	--------
-	function screen:loadTextures(file, width, height, numFrames,sheetContentWidth, sheetContentHeight)
-
-		local options = {
-			width=width,                              -- width of one frame
-			height=height,                            -- height of one frame
-			numFrames=numFrames,                      -- total number of frames in spritesheet
-		    sheetContentWidth = sheetContentWidth,    -- width of original 1x size of entire sheet
-    		sheetContentHeight = sheetContentHeight   -- height of original 1x size of entire sheet
-		}
-
-		textures[#textures+1] = graphics.newImageSheet("content/images/"..file, options)
-
-		if textures[#textures] == nil then
-			print("error loading texture map"..file)
-			return -1
-		else 
-			print(file.." texture map has been successfully loaded")
-			return 0
-		end
-	end
-	--------
-	function screen:loadModelLib(file)
-
-		local pPath = system.pathForFile( "content/objects/modelLib.txt", system.pathForFile )
-		local pFile = fileio:new(pPath) 		
-		result      = io.open( pPath, "r" )
-		str         = result:read( "*a" )
-
-		io.close( result )
-
-		if result == nil then
-			print("failed to load the model library "..file)
-			return -1
-		else
-			print(file.." model library has been successfully loaded")
-			return json.decode( str)
-		end
-
-	end
-	--------
 	function screen:show(time)
 		transition.to(self, {time = time, alpha = 1, onComplete = function()
 			screen.state = 0
@@ -81,7 +43,6 @@ function LoadWorld:new(params)
 	end
 	--------
 	function screen:hide(time)
-
 		transition.to(self, {time = time, alpha = 0, onComplete = function()
 			screen.state = 0
 		end
@@ -90,12 +51,17 @@ function LoadWorld:new(params)
 	--------
 	function screen:process(centerX, centerY, angle)
 
+		
+		local pEnd = #tmpImgBuffer
+		for i = 1, pEnd, 1 do
+			tmpImgBuffer[i]:removeSelf()
+			tmpImgBuffer[i] = nil
+		end
 
-		local pEnd = #self.models
-		-- print("objects to spin",pEnd)
+		pEnd = #self.models
 		for i=1,pEnd,1 do
-		self:moveObject(self.models[i])
-		 end
+			self:moveObject(self.models[i])
+		end
    end
 	--------
 	function screen:pause()
@@ -112,9 +78,48 @@ function LoadWorld:new(params)
 
 	end	
 	--------
-	function screen:insertObject(object, centerX, centerY, centerZ, angle, name, spin)
+	function screen:loadTextures(file, width, height, numFrames,sheetContentWidth, sheetContentHeight)
 
-		--print("object = ",object, centerX, centerY, angle, name, spin)
+		local options = {
+			width=width,                              -- width of one frame
+			height=height,                            -- height of one frame
+			numFrames=numFrames,                      -- total number of frames in spritesheet
+		    sheetContentWidth = sheetContentWidth,    -- width of original 1x size of entire sheet
+    		sheetContentHeight = sheetContentHeight   -- height of original 1x size of entire sheet
+		}
+
+		textures[#textures+1] = graphics.newImageSheet("content/images/"..file, options)
+
+		if textures[#textures] == nil then
+			--print("error loading texture map"..file)
+			return -1
+		else 
+			--print(file.." texture map has been successfully loaded")
+			return 0
+		end
+	end
+	--------
+	function screen:loadModelLib(file)
+
+		local pPath = system.pathForFile( "content/objects/modelLib.txt", system.pathForFile )
+		local pFile = fileio:new(pPath) 		
+		result      = io.open( pPath, "r" )
+		str         = result:read( "*a" )
+
+		io.close( result )
+
+		if result == nil then
+			--print("failed to load the model library "..file)
+			return -1
+		else
+			--print(file.." model library has been successfully loaded")
+			return json.decode( str)
+		end
+
+	end
+
+	--------
+	function screen:insertObject(object, centerX, centerY, centerZ, angle, name, spin)
 
 		local pos = #self.models+1
 		local verticiesNum = #object
@@ -129,35 +134,40 @@ function LoadWorld:new(params)
 			angle = angle
 		}
 
-print("object = ",self.models[pos].model, self.models[pos].x, self.models[pos].y, self.models[pos].angle, self.models[pos].name, self.models[pos].spin)
-
-
 		-- add point images for visual reference (OPTIONAL)
 		for i=1,verticiesNum,1 do
 			self.models[pos].model[i][4] = display.newImage( screen, "content/images/star.png", 0, 0 )
 		 end
 
-		 print("rendering :",pos)
+		 --print("rendering :",pos)
 		self:renderObject(self.models[pos])
 
 
 	end
 	--------
 	function screen:renderObject(object)
-		print("rendering...")
 
 		local pEnd  = #object.model
 		local pList = {}
 
+		-- update point calculations
 		for i=1, pEnd, 1 do 
-
 			local p = object.model[i]
-			--print(p[1],p[2],p[3],p[4])
-			local scalar = 1.0/((p[3] * 1.0) / object.angle + 1)
-			--print(scalar)
+			local scalar = object.z/((p[3] * object.z) / object.angle + 1)
   			p[4].x,p[4].y= (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
 		 end
 
+		 -- render lines
+		 for i=1, pEnd, 1 do 
+		 	local p = object.model[i]
+		 	  if i>1 then
+  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.model[i-1][4].x,object.model[i-1][4].y, p[4].x,p[4].y )
+  			else
+  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.model[pEnd][4].x,object.model[pEnd][4].y, p[4].x,p[4].y )
+  			 end
+		 end
+
+		   			-- draw lines (will later be controlled by view options {dot,lines,textures})
 	end
 	--------
 	function screen:moveObject(object)
@@ -168,13 +178,18 @@ print("object = ",self.models[pos].model, self.models[pos].x, self.models[pos].y
 	    
 	    local p     = object.model[i]
 	    local x,y,z = p[1],p[2],p[3]
-	    
-	    local tmp = z * math.cos(object.spin[2]) - x   * math.sin(object.spin[2])
-	    p[1]      = z * math.sin(object.spin[2]) + x   * math.cos(object.spin[2])
-	    p[3]      = y * math.sin(object.spin[1]) + tmp * math.cos(object.spin[1])
-	    p[2]      = y * math.cos(object.spin[1]) - tmp * math.sin(object.spin[1])
-	    
-	    p[4].x,p[4].y= p[1]+object.x,p[2]+object.y
+
+	    local ry  = y  * math.cos(object.spin[1]) - z  * math.sin(object.spin[1])
+		local rz  = z  * math.cos(object.spin[1]) + y  * math.sin(object.spin[1])
+		local rz2 = rz * math.cos(object.spin[2]) - x  * math.sin(object.spin[2])
+ 		local rx  = x  * math.cos(object.spin[2]) + rz * math.sin(object.spin[2])
+ 		local rx2 = rx * math.cos(object.spin[3]) - ry * math.sin(object.spin[3])
+ 		local ry2 = ry * math.cos(object.spin[3]) + rx * math.sin(object.spin[3])
+
+	    p[1], p[2], p[3]  = rx2, ry2, rz2
+
+		screen:renderObject(object)
+
 	  end
 	  
 	end	
@@ -183,6 +198,8 @@ print("object = ",self.models[pos].model, self.models[pos].x, self.models[pos].y
 	return screen
 
 end
+
+
 
 return LoadWorld
 
