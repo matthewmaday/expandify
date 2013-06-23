@@ -4,6 +4,7 @@
 -- external libraries
 require "io"
 local json       = require "json"
+local str = require("library.core.str")
 
 -- local variables
 local fileio = {}
@@ -37,11 +38,12 @@ function fileio:readFile()
 	
 	if result then
 
-		--  Read file contents into a string
-		local dataStr = result:read( "*a" )
-		io.close( result )
-		
-		return dataStr
+	-- Read file contents into a string
+	local dataStr = result:read( "*a" )
+
+	io.close( result ) -- important!
+
+	return dataStr
 
 	else
 
@@ -80,7 +82,6 @@ function fileio:writeFile(data)
 	-- os.remove( filePath )
 
 end
-
 
 return fileio
 

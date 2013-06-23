@@ -10,40 +10,41 @@ display.setStatusBar( display.HiddenStatusBar )
 --------------------------------------------------------------------------------------
 -- External Libraries
 --------------------------------------------------------------------------------------
-local fileio     = require ("library.core.fileio")
-local json       = require "json"
 
 --------------------------------------------------------------------------------------
 -- variable declaritions
 --------------------------------------------------------------------------------------
 
 local screen       = display.newGroup()
-local myObj = {}
 local gComponents  = {}
 
 --------------------------------------------------------------------------------------
 -- functions
 --------------------------------------------------------------------------------------
-local function readDataFile(pObject)
-	
-	local str = pObject:readFile()
 
-	if str == "" then
-		print("failed object db load")
-		return -1
-	else
-		return json.decode(str)
-	end
-
+function table.deepcopy(object)
+    local lookup_table = {}
+    local function _copy(object)
+        if type(object) ~= "table" then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local new_table = {}
+        lookup_table[object] = new_table
+        for index, value in pairs(object) do
+            new_table[_copy(index)] = _copy(value)
+        end
+        return setmetatable(new_table, getmetatable(object))
+    end
+    return _copy(object)
 end
 --------
-local function insertObject(num)
+local function insertModelIntoWorld(object)
 
-	if objectLibray ~= -1 then
-		print("Loading object...")
-		--gComponents.world:insertObject(myObj[num],display.contentCenterX,display.contentCenterY,900000)
-
-	end
+		gComponents.world:insertObject(table.deepcopy(object),display.contentCenterX,display.contentCenterY, 10, 900000, "square",{.02, .02})
+		gComponents.world:insertObject(table.deepcopy(object),10,10,10, 900000, "square2",{.05, .00})
+		gComponents.world:insertObject(table.deepcopy(object),200,500,200, 900000, "square3",{.01, .01})
 
 end
 --------------------------------------------------------------------------------------
@@ -56,17 +57,24 @@ local function loadExpandify()
 
 	require "application.views.world"
 
-	local pFile = fileio.new(system.pathForFile( "content/objects/objects.txt", system.pathForFile()))
-	local obj   = readDataFile(pFile)
-	
-	myObj = obj
-print("Count of obj",#myObj)
+	local result = nil
 	gComponents[#gComponents+1] = {world=nil}
 	gComponents.world  = LoadWorld:new({
 		
 	})
 
+	-- initialize the textures and models
+	gComponents.world.modelLib = gComponents.world:loadModelLib("content/objects/modelLib.txt")
+	print("model loaded successfully ",result)
+	result = gComponents.world:loadTextures("toppanel.png", 80, 77, 8,320, 154)
+	print("textures loaded successfully ",result)
+
+
+	insertModelIntoWorld(gComponents.world.modelLib) -- this is only a single object right now.
+
+	-- display on the screen
 	gComponents.world:show(300)
+
 	Runtime:addEventListener("enterFrame", function()
 	gComponents.world:process(display.contentCenterX,display.contentCenterY)	
 	end
@@ -79,7 +87,6 @@ end
 
 loadExpandify()
 gComponents.world:show()
-insertObject(1)
 
 return screen
 
