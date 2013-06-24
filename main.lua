@@ -40,11 +40,9 @@ function table.deepcopy(object)
     return _copy(object)
 end
 --------
-local function insertModelIntoWorld(object)
+local function insertModelIntoWorld(object, centerX, centerY, centerZ, angle, name, spin)
 
-		gComponents.world:insertObject(table.deepcopy(object),display.contentCenterX,display.contentCenterY, .5, 900000, "square",{.02, .02,.02})
-		gComponents.world:insertObject(table.deepcopy(object),10,10,1, 900000, "square2",{.05, .00,0})
-		gComponents.world:insertObject(table.deepcopy(object),200,400,.4, 900000, "square3",{.01, .01,.02})
+	gComponents.world:insertObject(table.deepcopy(object),centerX,centerY, centerZ, angle, name,spin)
 
 end
 --------------------------------------------------------------------------------------
@@ -59,8 +57,7 @@ local function loadExpandify()
 
 	local result = nil
 	gComponents[#gComponents+1] = {world=nil}
-	gComponents.world  = LoadWorld:new({
-		
+	gComponents.world  = LoadWorld:new({	
 	})
 
 	-- initialize the textures and models
@@ -69,11 +66,10 @@ local function loadExpandify()
 	result = gComponents.world:loadTextures("toppanel.png", 80, 77, 8,320, 154)
 	print("textures loaded successfully ",result)
 
-	print("total number of models = ",#gComponents.world.modelLib)
-	local pEnd = #gComponents.world.modelLib
-	for i=1,pEnd,1 do
-		insertModelIntoWorld(gComponents.world.modelLib[i])
-	end
+	insertModelIntoWorld(gComponents.world.modelLib[1], display.contentCenterX,display.contentCenterY,.5,900000,"square",{.02, .02,.02})
+	insertModelIntoWorld(gComponents.world.modelLib[1], 200,400,.4,900000,"square2",{.05, .00,0})
+	insertModelIntoWorld(gComponents.world.modelLib[2], 100,100,1,900000,"square3",{.01, .01,.02})
+	
 	-- display on the screen
 	gComponents.world:show(300)
 

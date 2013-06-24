@@ -2,6 +2,14 @@
 
 LoadWorld = {}
 
+-- definitions for help
+--    vertices : points of a geometric shape
+--    facets   : flat faces on geometric shapes
+--    model    : a collection of facets to create a single 3d object
+
+-- modelLib => 
+-- models => facets => vertices
+
 --------------------------------------------------------------------------------------
 -- External Libraries
 --------------------------------------------------------------------------------------
@@ -51,16 +59,17 @@ function LoadWorld:new(params)
 	--------
 	function screen:process(centerX, centerY, angle)
 
-		
+		-- clean up images used to draw the lines
 		local pEnd = #tmpImgBuffer
 		for i = 1, pEnd, 1 do
 			tmpImgBuffer[i]:removeSelf()
 			tmpImgBuffer[i] = nil
 		end
 
+		-- refresh the position of the models within the world
 		pEnd = #self.models
-		for i=1,pEnd,1 do
-			self:moveObject(self.models[i])
+		for model=1,pEnd,1 do
+			self:moveObject(self.models[model])
 		end
    end
 	--------
@@ -121,76 +130,95 @@ function LoadWorld:new(params)
 	--------
 	function screen:insertObject(object, centerX, centerY, centerZ, angle, name, spin)
 
-		local pos = #self.models+1
-		local verticiesNum = #object
+		local pFacetCnt = #object                -- determine the number of facets for the model
+		local pNewModel = {
+			name   = name,
+			facets = {},
+			x      = centerX,
+			y      = centerY,
+			z      = centerZ,
+			angle  = angle,
+			spin   = spin}                        -- initializing a new local variable to use while constructing the model
 
-		self.models[pos] = {
-			name  = name,
-			model = table.copy(object),
-			spin  = spin,
-			x     = centerX,
-			y     = centerY,
-			z     = centerZ,
-			angle = angle
-		}
 
-		-- add point images for visual reference (OPTIONAL)
-		for i=1,verticiesNum,1 do
-			self.models[pos].model[i][4] = display.newImage( screen, "content/images/star.png", 0, 0 )
-		 end
+		print("total number of facets for this object",pFacetCnt)
+		for facet=1,pFacetCnt,1 do
 
-		 --print("rendering :",pos)
-		self:renderObject(self.models[pos])
+			local pVerticesCnt = #object[facet]
+			local pVertices = object[facet]
 
+			print("Total number of vertices of facet"..facet, pVerticesCnt, facet)
+
+				-- add point images for visual reference (OPTIONAL)
+				for i=1,pVerticesCnt,1 do
+					pVertices[i][4] = display.newImage( screen, "content/images/star.png", 0, 0 )
+				end
+
+				pNewModel.facets[#pNewModel.facets+1] = pVertices
+ 		end
+
+ 		print("new model contains ",#pNewModel.facets, #pNewModel.facets[1], pNewModel.facets[1][1])
+
+ 		self.models[#self.models+1] = pNewModel
+
+ 		self:renderObject(self.models[#self.models])
 
 	end
 	--------
 	function screen:renderObject(object)
 
-		local pEnd  = #object.model
-		local pList = {}
+		local pFacetCnt = #object.facets
 
-		-- update point calculations
-		for i=1, pEnd, 1 do 
-			local p = object.model[i]
-			local scalar = object.z/((p[3] * object.z) / object.angle + 1)
-  			p[4].x,p[4].y= (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
-		 end
+		for facet=1,pFacetCnt,1 do
 
-		 -- render lines
-		 for i=1, pEnd, 1 do 
-		 	local p = object.model[i]
-		 	  if i>1 then
-  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.model[i-1][4].x,object.model[i-1][4].y, p[4].x,p[4].y )
-  			else
-  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.model[pEnd][4].x,object.model[pEnd][4].y, p[4].x,p[4].y )
-  			 end
-		 end
+			local pEnd = #object.facets[facet]
 
-		   			-- draw lines (will later be controlled by view options {dot,lines,textures})
+			-- update point calculations
+			for i=1, pEnd, 1 do 
+				
+				local p = object.facets[facet][i]
+				local scalar = object.z/((p[3] * object.z) / object.angle + 1)
+				p[4].x,p[4].y= (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
+			end
+
+			 -- render lines
+			for i=1, pEnd, 1 do 
+			 	local p = object.facets[facet][i]
+			 	  if i>1 then
+	  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][i-1][4].x,object.facets[facet][i-1][4].y, p[4].x,p[4].y )
+	  			else
+	  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][pEnd][4].x,object.facets[facet][pEnd][4].y, p[4].x,p[4].y )
+	  			 end
+	  		end
+		end
+
+	-- draw lines (will later be controlled by view options {dot,lines,textures})
 	end
 	--------
 	function screen:moveObject(object)
 
-	  local pEnd = #object.model
+		local pFacetCnt = #object.facets
+		
+		for facet=1,pFacetCnt,1 do
 
-	  for i = 1, pEnd, 1 do
+			local pEnd = #object.facets[facet]
+
+	 		for i = 1, pEnd, 1 do
 	    
-	    local p     = object.model[i]
-	    local x,y,z = p[1],p[2],p[3]
+			    local p = object.facets[facet][i]
+		 		local x,y,z = p[1],p[2],p[3]
+			    local ry  = y  * math.cos(object.spin[1]) - z  * math.sin(object.spin[1])
+				local rz  = z  * math.cos(object.spin[1]) + y  * math.sin(object.spin[1])
+				local rz2 = rz * math.cos(object.spin[2]) - x  * math.sin(object.spin[2])
+		 		local rx  = x  * math.cos(object.spin[2]) + rz * math.sin(object.spin[2])
+		 		local rx2 = rx * math.cos(object.spin[3]) - ry * math.sin(object.spin[3])
+		 		local ry2 = ry * math.cos(object.spin[3]) + rx * math.sin(object.spin[3])
 
-	    local ry  = y  * math.cos(object.spin[1]) - z  * math.sin(object.spin[1])
-		local rz  = z  * math.cos(object.spin[1]) + y  * math.sin(object.spin[1])
-		local rz2 = rz * math.cos(object.spin[2]) - x  * math.sin(object.spin[2])
- 		local rx  = x  * math.cos(object.spin[2]) + rz * math.sin(object.spin[2])
- 		local rx2 = rx * math.cos(object.spin[3]) - ry * math.sin(object.spin[3])
- 		local ry2 = ry * math.cos(object.spin[3]) + rx * math.sin(object.spin[3])
+			    p[1], p[2], p[3]  = rx2, ry2, rz2
 
-	    p[1], p[2], p[3]  = rx2, ry2, rz2
-
-		screen:renderObject(object)
-
-	  end
+				screen:renderObject(object)
+			end
+	 	end
 	  
 	end	
 
@@ -198,7 +226,6 @@ function LoadWorld:new(params)
 	return screen
 
 end
-
 
 
 return LoadWorld
