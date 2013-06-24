@@ -57,7 +57,7 @@ local function loadExpandify()
 
 	local result = nil
 	gComponents[#gComponents+1] = {world=nil}
-	gComponents.world  = LoadWorld:new({	
+	gComponents.world  = LoadWorld:new({view="line"	
 	})
 
 	-- initialize the textures and models
@@ -69,6 +69,7 @@ local function loadExpandify()
 	insertModelIntoWorld(gComponents.world.modelLib[1], display.contentCenterX,display.contentCenterY,.5,900000,"square",{.02, .02,.02})
 	insertModelIntoWorld(gComponents.world.modelLib[1], 200,400,.4,900000,"square2",{.05, .00,0})
 	insertModelIntoWorld(gComponents.world.modelLib[2], 100,100,1,900000,"square3",{.01, .01,.02})
+	insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,.6,100,"square3",{0, 0,0})
 	
 	-- display on the screen
 	gComponents.world:show(300)

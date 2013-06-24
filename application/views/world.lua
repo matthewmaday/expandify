@@ -2,7 +2,7 @@
 
 LoadWorld = {}
 
--- definitions for help
+-- definitions for help documentation
 --    vertices : points of a geometric shape
 --    facets   : flat faces on geometric shapes
 --    model    : a collection of facets to create a single 3d object
@@ -22,9 +22,9 @@ function LoadWorld:new(params)
 
 	local screen   = display.newGroup()
 	local textures = {}
-
+	local view     = params.view    -- point, line, texture
 	
-
+	print("current view is ",view)
 	------------------------------------------------------------------------------------------
 	-- Primary Views
 	------------------------------------------------------------------------------------------
@@ -160,7 +160,6 @@ function LoadWorld:new(params)
  		print("new model contains ",#pNewModel.facets, #pNewModel.facets[1], pNewModel.facets[1][1])
 
  		self.models[#self.models+1] = pNewModel
-
  		self:renderObject(self.models[#self.models])
 
 	end
@@ -178,18 +177,22 @@ function LoadWorld:new(params)
 				
 				local p = object.facets[facet][i]
 				local scalar = object.z/((p[3] * object.z) / object.angle + 1)
-				p[4].x,p[4].y= (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
+
+
+					p[4].x,p[4].y= (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
+
 			end
 
 			 -- render lines
-			for i=1, pEnd, 1 do 
-			 	local p = object.facets[facet][i]
-			 	  if i>1 then
-	  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][i-1][4].x,object.facets[facet][i-1][4].y, p[4].x,p[4].y )
-	  			else
-	  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][pEnd][4].x,object.facets[facet][pEnd][4].y, p[4].x,p[4].y )
-	  			 end
-	  		end
+				for i=1, pEnd, 1 do 
+				 	local p = object.facets[facet][i]
+				 	  if i>1 then
+		  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][i-1][4].x,object.facets[facet][i-1][4].y, p[4].x,p[4].y )
+		  			else
+		  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][pEnd][4].x,object.facets[facet][pEnd][4].y, p[4].x,p[4].y )
+		  			 end
+		  		end
+	  		
 		end
 
 	-- draw lines (will later be controlled by view options {dot,lines,textures})
