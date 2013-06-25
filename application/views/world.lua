@@ -69,7 +69,7 @@ function LoadWorld:new(params)
 		-- refresh the position of the models within the world
 		pEnd = #self.models
 		for model=1,pEnd,1 do
-			self:moveObject(self.models[model])
+			self:moveObject(self.models[model],0,0,0)
 		end
    end
 	--------
@@ -132,13 +132,15 @@ function LoadWorld:new(params)
 
 		local pFacetCnt = #object                -- determine the number of facets for the model
 		local pNewModel = {
-			name   = name,
-			facets = {},
-			x      = centerX,
-			y      = centerY,
-			z      = centerZ,
-			angle  = angle,
-			spin   = spin}                        -- initializing a new local variable to use while constructing the model
+			name        = name,
+			facets      = {},
+			facetCount  = {},          -- pre-calculating number of facets
+			x           = centerX,
+			y           = centerY,
+			z           = centerZ,
+			angle       = angle,
+			spin        = spin,
+			count       = pFacetCnt}   -- pre-calculating count saved on speed drastically                     
 
 
 		print("total number of facets for this object",pFacetCnt)
@@ -151,10 +153,12 @@ function LoadWorld:new(params)
 
 				-- add point images for visual reference (OPTIONAL)
 				for i=1,pVerticesCnt,1 do
-					pVertices[i][4] = display.newImage( screen, "content/images/star.png", 0, 0 )
+					pVertices[i][4] = display.newCircle( 0, 0, 1 )
 				end
 
 				pNewModel.facets[#pNewModel.facets+1] = pVertices
+				pNewModel.facetCount[#pNewModel.facets]  = pVerticesCnt
+
  		end
 
  		print("new model contains ",#pNewModel.facets, #pNewModel.facets[1], pNewModel.facets[1][1])
@@ -164,62 +168,71 @@ function LoadWorld:new(params)
 
 	end
 	--------
-	function screen:renderObject(object)
+	function screen:renderObject(object, x,y,z)
 
-		local pFacetCnt = #object.facets
+		--print(x,y,z)
+		local pFacetCnt = object.count
 
 		for facet=1,pFacetCnt,1 do
-
-			local pEnd = #object.facets[facet]
-
+			local pEnd = object.facetCount[facet]
 			-- update point calculations
 			for i=1, pEnd, 1 do 
 				
 				local p = object.facets[facet][i]
 				local scalar = object.z/((p[3] * object.z) / object.angle + 1)
 
+				-- speed test option 1 (way too slow)
+				--transition.to( p[4], { time=0, alpha=1, x=(p[1] * scalar) + object.x, y=object.y - (p[2] * scalar)} )
 
-					p[4].x,p[4].y= (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
+				-- speed test option 2 (faster)
+				--p[4].x,p[4].y  = (p[1] * scalar) + object.x, object.y - (p[2] * scalar)
+
+				-- local xPos = ((p[1] * scalar) + object.x)
+				-- local yPos = (object.y - (p[2] * scalar))
+				-- print(xPos,yPos)
+				 p[4]:translate(xPos,yPos)
 
 			end
 
 			 -- render lines
-				for i=1, pEnd, 1 do 
-				 	local p = object.facets[facet][i]
-				 	  if i>1 then
-		  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][i-1][4].x,object.facets[facet][i-1][4].y, p[4].x,p[4].y )
-		  			else
-		  				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][pEnd][4].x,object.facets[facet][pEnd][4].y, p[4].x,p[4].y )
-		  			 end
-		  		end
+			 -- for i=1, pEnd, 1 do 
+				--  	local p = object.facets[facet][i]
+				--  	  if i>1 then
+		  -- 				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][i-1][4].x,object.facets[facet][i-1][4].y, p[4].x,p[4].y )
+		  -- 			else
+		  -- 				tmpImgBuffer[#tmpImgBuffer+1] = display.newLine( screen, object.facets[facet][pEnd][4].x,object.facets[facet][pEnd][4].y, p[4].x,p[4].y )
+		  -- 			 end
+		  -- 		end
 	  		
 		end
 
 	-- draw lines (will later be controlled by view options {dot,lines,textures})
 	end
 	--------
-	function screen:moveObject(object)
+	function screen:moveObject(object, xChange, yChange, zChange)
 
-		local pFacetCnt = #object.facets
+		local pFacetCnt = object.count
+		local spinx, spiny, spinz = object.spin[1],object.spin[2],object.spin[3] -- maiking them into locals increased speed slightly
 		
 		for facet=1,pFacetCnt,1 do
 
-			local pEnd = #object.facets[facet]
+			local pEnd = object.facetCount[facet]
 
 	 		for i = 1, pEnd, 1 do
 	    
 			    local p = object.facets[facet][i]
-		 		local x,y,z = p[1],p[2],p[3]
-			    local ry  = y  * math.cos(object.spin[1]) - z  * math.sin(object.spin[1])
-				local rz  = z  * math.cos(object.spin[1]) + y  * math.sin(object.spin[1])
-				local rz2 = rz * math.cos(object.spin[2]) - x  * math.sin(object.spin[2])
-		 		local rx  = x  * math.cos(object.spin[2]) + rz * math.sin(object.spin[2])
-		 		local rx2 = rx * math.cos(object.spin[3]) - ry * math.sin(object.spin[3])
-		 		local ry2 = ry * math.cos(object.spin[3]) + rx * math.sin(object.spin[3])
+		 		local x,y,z = p[1]+xChange,p[2]+yChange,p[3]+zChange
+
+			    local ry  = y  * math.cos(spinx) - z  * math.sin(spinx)
+				local rz  = z  * math.cos(spinx) + y  * math.sin(spinx)
+				local rz2 = rz * math.cos(spiny) - x  * math.sin(spiny)
+		 		local rx  = x  * math.cos(spiny) + rz * math.sin(spiny)
+		 		local rx2 = rx * math.cos(spinz) - ry * math.sin(spinz)
+		 		local ry2 = ry * math.cos(spinz) + rx * math.sin(spinz)
 
 			    p[1], p[2], p[3]  = rx2, ry2, rz2
 
-				screen:renderObject(object)
+				screen:renderObject(object, x,y,z)
 			end
 	 	end
 	  

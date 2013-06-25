@@ -69,8 +69,20 @@ local function loadExpandify()
 	insertModelIntoWorld(gComponents.world.modelLib[1], display.contentCenterX,display.contentCenterY,.5,900000,"square",{.02, .02,.02})
 	insertModelIntoWorld(gComponents.world.modelLib[1], 200,400,.4,900000,"square2",{.05, .00,0})
 	insertModelIntoWorld(gComponents.world.modelLib[2], 100,100,1,900000,"square3",{.01, .01,.02})
-	insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,.6,100,"square3",{0, 0,0})
-	
+	insertModelIntoWorld(gComponents.world.modelLib[2], 20,20,1,900000,"square3",{.01, .01,.02})
+	--insertModelIntoWorld(gComponents.world.modelLib[2], 400,400,1,900000,"square3",{.01, .01,.02})
+	insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,1,100,"square2",{0, .02,0})
+	-- insertModelIntoWorld(gComponents.world.modelLib[3], 300,400,.6,100,"square2",{.02, .2,0})
+-- insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,.6,100,"square2",{0, 0,0})
+-- insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,.6,100,"square2",{0, 0,0})
+ --insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,.6,100,"square2",{0, 0,0})
+-- insertModelIntoWorld(gComponents.world.modelLib[3], 200,400,.6,100,"square3",{0, 0,0})
+
+
+
+
+
+
 	-- display on the screen
 	gComponents.world:show(300)
 
